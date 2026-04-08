@@ -116,7 +116,7 @@ def run_task(task_id: str):
 
     rewards_str = ",".join(f"{r:.2f}" for r in all_rewards)
     success = final_score >= 0.5
-    print(f"[END] success={str(success).lower()} steps={step_num} rewards={rewards_str}")
+    print(f"[END] success={str(success).lower()} steps={step_num} score={final_score:.2f} rewards={rewards_str}")
     return final_score
 
 
@@ -127,7 +127,7 @@ if __name__ == "__main__":
             score = run_task(task)
             scores[task] = score
         except Exception as e:
-            print(f"[END] success=false steps=0 rewards=")
+            print(f"[END] success=false steps=0 score=0.00 rewards=")
             scores[task] = 0.0
 
     print("\n=== Baseline Results ===")
