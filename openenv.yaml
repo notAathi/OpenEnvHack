@@ -1,0 +1,31 @@
+name: email-triage-env
+version: "1.0.0"
+description: >
+  A real-world email triage environment where an agent must classify, prioritize,
+  and respond to emails. Tasks span easy (classification), medium (prioritization),
+  and hard (full triage with response drafting).
+tags:
+  - openenv
+  - email
+  - nlp
+  - real-world
+tasks:
+  - id: easy
+    name: Email Classification
+    description: Classify each email into one of [spam, urgent, normal, newsletter]
+    difficulty: easy
+  - id: medium
+    name: Email Prioritization
+    description: Sort a mixed inbox by urgency and assign priority scores
+    difficulty: medium
+  - id: hard
+    name: Full Email Triage
+    description: Classify, prioritize, and draft a reply for each email
+    difficulty: hard
+observation_space:
+  type: object
+  description: Current email(s) in inbox with metadata
+action_space:
+  type: object
+  description: Classification label, priority score, and optional reply draft
+reward_range: [0.0, 1.0]
