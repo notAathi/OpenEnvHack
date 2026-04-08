@@ -1,7 +1,8 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
-from typing import Dict
+from typing import Dict, Optional
 import uvicorn
+import uuid
 
 from environment.env import EmailTriageEnv
 from environment.models import Action, Observation
@@ -9,15 +10,16 @@ from environment.models import Action, Observation
 app = FastAPI(title="Email Triage OpenEnv")
 
 _envs: Dict[str, EmailTriageEnv] = {}
+DEFAULT_SESSION = "default"
 
 
 class ResetRequest(BaseModel):
-    session_id: str
+    session_id: Optional[str] = None
     task_id: str = "easy"
 
 
 class StepRequest(BaseModel):
-    session_id: str
+    session_id: Optional[str] = None
     action: Action
 
 
@@ -32,15 +34,19 @@ def health():
 
 
 @app.post("/reset", response_model=Observation)
-def reset(req: ResetRequest):
+def reset(req: ResetRequest = None):
+    if req is None:
+        req = ResetRequest()
+    session_id = req.session_id or DEFAULT_SESSION
     env = EmailTriageEnv()
-    _envs[req.session_id] = env
+    _envs[session_id] = env
     return env.reset(task_level=req.task_id)
 
 
 @app.post("/step")
 def step(req: StepRequest):
-    env = _envs.get(req.session_id)
+    session_id = req.session_id or DEFAULT_SESSION
+    env = _envs.get(session_id)
     if env is None:
         raise HTTPException(status_code=404, detail="Session not found. Call /reset first.")
     obs, reward, done, info = env.step(req.action)
@@ -55,9 +61,25 @@ def state(session_id: str):
     return env.state().model_dump()
 
 
+@app.get("/state")
+def state_default():
+    env = _envs.get(DEFAULT_SESSION)
+    if env is None:
+        raise HTTPException(status_code=404, detail="Session not found.")
+    return env.state().model_dump()
+
+
 @app.get("/score/{session_id}")
 def score(session_id: str):
     env = _envs.get(session_id)
+    if env is None:
+        raise HTTPException(status_code=404, detail="Session not found.")
+    return {"final_score": env.final_score()}
+
+
+@app.get("/score")
+def score_default():
+    env = _envs.get(DEFAULT_SESSION)
     if env is None:
         raise HTTPException(status_code=404, detail="Session not found.")
     return {"final_score": env.final_score()}
