@@ -59,11 +59,11 @@ class EmailTriageEnv:
 
     def final_score(self) -> float:
         if not self._actions_taken:
-            return 0.0
+            return 0.01
         scores = [GRADERS[self.task_id](a) for a in self._actions_taken.values()]
         unanswered = len(self._emails) - len(self._actions_taken)
         penalty = (unanswered / len(self._emails)) * 0.1
-        return round(max(0.0, sum(scores) / len(self._emails) - penalty), 4)
+        return round(min(0.99, max(0.01, sum(scores) / len(self._emails) - penalty)), 4)
 
     def _make_obs(self) -> Observation:
         pending = [e for e in self._emails if e.id not in self._actions_taken]
