@@ -2,7 +2,7 @@
 title: Executive Conflict Resolution OpenEnv
 emoji: ⚡
 colorFrom: indigo
-colorTo: orange
+colorTo: red
 sdk: docker
 pinned: false
 tags:
