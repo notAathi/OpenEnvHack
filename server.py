@@ -1,12 +1,19 @@
 from fastapi import FastAPI, HTTPException
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Dict, Optional
 import uvicorn
+import os
 
 from environment.env import ConflictResolutionEnv
 from environment.models import Action, Observation
 
 app = FastAPI(title="Executive Conflict Resolution OpenEnv")
+
+STATIC_DIR = os.path.join(os.path.dirname(__file__), "static")
+if os.path.exists(STATIC_DIR):
+    app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 _envs: Dict[str, ConflictResolutionEnv] = {}
 DEFAULT_SESSION = "default"
@@ -24,6 +31,9 @@ class StepRequest(BaseModel):
 
 @app.get("/")
 def root():
+    index = os.path.join(STATIC_DIR, "index.html")
+    if os.path.exists(index):
+        return FileResponse(index)
     return {"status": "ok", "env": "executive-conflict-resolution-openenv"}
 
 

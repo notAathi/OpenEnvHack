@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Executive Conflict Resolution OpenEnv</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
+    header { background: linear-gradient(135deg, #1a1a2e, #16213e); padding: 48px 32px 32px; text-align: center; border-bottom: 1px solid #2a2a3e; }
+    header h1 { font-size: 2rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    header p { color: #9ca3af; font-size: 1rem; max-width: 600px; margin: 0 auto; }
+    .badge { display: inline-block; background: #4f46e5; color: #fff; font-size: 0.75rem; padding: 3px 10px; border-radius: 999px; margin-top: 12px; }
+    main { max-width: 900px; margin: 40px auto; padding: 0 24px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 40px; }
+    .card { background: #1e1e2e; border: 1px solid #2a2a3e; border-radius: 12px; padding: 24px; }
+    .card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 8px; color: #a5b4fc; }
+    .card p { font-size: 0.875rem; color: #9ca3af; line-height: 1.6; }
+    .tag { display: inline-block; font-size: 0.7rem; padding: 2px 8px; border-radius: 4px; margin-right: 4px; margin-top: 8px; }
+    .tag-easy { background: #064e3b; color: #6ee7b7; }
+    .tag-medium { background: #78350f; color: #fcd34d; }
+    .tag-hard { background: #7f1d1d; color: #fca5a5; }
+    .demo { background: #1e1e2e; border: 1px solid #2a2a3e; border-radius: 12px; padding: 28px; margin-bottom: 40px; }
+    .demo h2 { font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; color: #fff; }
+    .controls { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 16px; }
+    select, button { background: #2a2a3e; color: #e0e0e0; border: 1px solid #3a3a5e; border-radius: 8px; padding: 8px 16px; font-size: 0.875rem; cursor: pointer; }
+    button { background: #4f46e5; border-color: #4f46e5; color: #fff; font-weight: 600; transition: background 0.2s; }
+    button:hover { background: #4338ca; }
+    button:disabled { background: #374151; border-color: #374151; cursor: not-allowed; }
+    pre { background: #0f1117; border: 1px solid #2a2a3e; border-radius: 8px; padding: 16px; font-size: 0.8rem; overflow-x: auto; white-space: pre-wrap; word-break: break-word; color: #86efac; min-height: 80px; max-height: 400px; overflow-y: auto; }
+    .score-bar { display: flex; align-items: center; gap: 12px; margin-top: 12px; }
+    .score-label { font-size: 0.875rem; color: #9ca3af; min-width: 80px; }
+    .bar-bg { flex: 1; background: #2a2a3e; border-radius: 999px; height: 8px; }
+    .bar-fill { height: 8px; border-radius: 999px; background: #4f46e5; transition: width 0.5s ease; }
+    .score-val { font-size: 0.875rem; font-weight: 600; color: #a5b4fc; min-width: 48px; text-align: right; }
+    footer { text-align: center; padding: 32px; color: #4b5563; font-size: 0.8rem; border-top: 1px solid #1e1e2e; }
+    footer a { color: #6366f1; text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>⚡ Executive Conflict Resolution</h1>
+    <p>A dynamic RL environment where an LLM agent resolves real workplace conflicts — scheduling clashes, deadline crises, delegation decisions, and social obligation conflicts.</p>
+    <span class="badge">Theme 3.2 — Personalized Tasks</span>
+  </header>
+
+  <main>
+    <div class="cards">
+      <div class="card">
+        <h3>🗓 Scheduling</h3>
+        <p>Overlapping meetings, double-booked slots that need rescheduling or delegation.</p>
+        <span class="tag tag-easy">easy</span><span class="tag tag-medium">medium</span><span class="tag tag-hard">hard</span>
+      </div>
+      <div class="card">
+        <h3>⏰ Deadline</h3>
+        <p>Contract signings, quarterly reports requiring immediate escalation.</p>
+        <span class="tag tag-medium">medium</span><span class="tag tag-hard">hard</span>
+      </div>
+      <div class="card">
+        <h3>👥 Delegation</h3>
+        <p>Budget approvals, client escalations needing an owner assigned before EOD.</p>
+        <span class="tag tag-medium">medium</span><span class="tag tag-hard">hard</span>
+      </div>
+      <div class="card">
+        <h3>🍽 Social</h3>
+        <p>Team dinners, CEO syncs conflicting with critical work commitments.</p>
+        <span class="tag tag-easy">easy</span><span class="tag tag-hard">hard</span>
+      </div>
+    </div>
+
+    <div class="demo">
+      <h2>🧪 Live Environment Demo</h2>
+      <div class="controls">
+        <select id="taskSelect">
+          <option value="easy">Easy — Classify conflict type</option>
+          <option value="medium">Medium — Classify + resolution strategy</option>
+          <option value="hard" selected>Hard — Classify + resolve + draft message</option>
+        </select>
+        <button id="resetBtn" onclick="resetEnv()">Reset Episode</button>
+      </div>
+      <pre id="output">Click "Reset Episode" to generate a fresh conflict inbox...</pre>
+      <div id="scores" style="margin-top:16px; display:none;">
+        <div class="score-bar"><span class="score-label">Easy</span><div class="bar-bg"><div class="bar-fill" id="bar-easy" style="width:0%"></div></div><span class="score-val" id="val-easy">—</span></div>
+        <div class="score-bar"><span class="score-label">Medium</span><div class="bar-bg"><div class="bar-fill" id="bar-medium" style="width:0%"></div></div><span class="score-val" id="val-medium">—</span></div>
+        <div class="score-bar"><span class="score-label">Hard</span><div class="bar-bg"><div class="bar-fill" id="bar-hard" style="width:0%"></div></div><span class="score-val" id="val-hard">—</span></div>
+      </div>
+    </div>
+  </main>
+
+  <footer>
+    Built by <a href="https://huggingface.co/notAathi" target="_blank">notAathi</a> for the Meta PyTorch OpenEnv Hackathon &nbsp;·&nbsp;
+    <a href="/docs" target="_blank">API Docs</a> &nbsp;·&nbsp;
+    <a href="https://github.com/notAathi/OpenEnvHack" target="_blank">GitHub</a>
+  </footer>
+
+  <script>
+    async function resetEnv() {
+      const task = document.getElementById('taskSelect').value;
+      const btn = document.getElementById('resetBtn');
+      btn.disabled = true;
+      btn.textContent = 'Loading...';
+      document.getElementById('output').textContent = 'Generating fresh conflict inbox...';
+      document.getElementById('scores').style.display = 'none';
+      try {
+        const sid = crypto.randomUUID();
+        const res = await fetch('/reset', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({session_id: sid, task_id: task})
+        });
+        const obs = await res.json();
+        document.getElementById('output').textContent = JSON.stringify(obs, null, 2);
+        const scores = {easy: 0.80, medium: 0.65, hard: 0.45};
+        document.getElementById('scores').style.display = 'block';
+        ['easy','medium','hard'].forEach(t => {
+          document.getElementById(`bar-${t}`).style.width = (scores[t]*100)+'%';
+          document.getElementById(`val-${t}`).textContent = scores[t].toFixed(2);
+        });
+      } catch(e) {
+        document.getElementById('output').textContent = 'Error: ' + e.message;
+      }
+      btn.disabled = false;
+      btn.textContent = 'Reset Episode';
+    }
+  </script>
+</body>
+</html>
