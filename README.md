@@ -1,42 +1,47 @@
 ---
-title: Email Triage OpenEnv
-emoji: 📧
-colorFrom: blue
-colorTo: green
+title: Executive Conflict Resolution OpenEnv
+emoji: ⚡
+colorFrom: indigo
+colorTo: orange
 sdk: docker
 pinned: false
 tags:
   - openenv
   - reinforcement-learning
-  - email
-  - nlp
+  - conflict-resolution
+  - personalized-tasks
 app_port: 7860
 ---
 
-# Email Triage OpenEnv
+# Executive Conflict Resolution OpenEnv
 
-A real-world email triage environment for RL agent evaluation. Agents must classify, prioritize, and respond to emails — tasks humans perform daily.
+A dynamic real-world environment where an LLM agent acts as an executive assistant resolving workplace conflicts — scheduling clashes, deadline crises, delegation decisions, and social obligation conflicts.
 
-## Overview
+**Theme: 3.2 Personalized Tasks** (also touches Theme 2: Long-Horizon Planning)
 
-The environment presents an inbox of 5 emails. The agent must process each email according to the task difficulty. Rewards are given per action based on accuracy of classification, priority scoring, and reply quality.
+## Why This Is Hard
+
+Unlike static email classification, every episode generates a **fresh inbox** with randomized participants, times, and stakes. The agent must:
+- Understand cross-item dependencies (can't reschedule meeting A without knowing about meeting B)
+- Choose the *right* resolution strategy, not just label the problem
+- Draft an actual actionable message — not a template
 
 ## Tasks
 
 | Task | Difficulty | Objective |
 |------|-----------|-----------|
-| `easy` | Easy | Classify each email: `spam`, `urgent`, `normal`, `newsletter` |
-| `medium` | Medium | Classify + assign priority score (0.0–1.0) |
-| `hard` | Hard | Classify + priority + draft a contextually appropriate reply |
+| `easy` | Easy | Classify each conflict: `scheduling`, `deadline`, `delegation`, `social` |
+| `medium` | Medium | Classify + choose resolution: `reschedule`, `decline`, `delegate`, `accept`, `escalate` |
+| `hard` | Hard | Classify + resolve + draft the actual message to send |
 
 ## Action Space
 
 ```json
 {
-  "email_id": "string",
-  "label": "spam | urgent | normal | newsletter",
-  "priority": 0.0,
-  "reply": "string (hard task only)"
+  "item_id": "string",
+  "conflict_type": "scheduling | deadline | delegation | social",
+  "resolution": "reschedule | decline | delegate | accept | escalate",
+  "message": "string (hard task only)"
 }
 ```
 
@@ -45,7 +50,8 @@ The environment presents an inbox of 5 emails. The agent must process each email
 ```json
 {
   "task_id": "easy | medium | hard",
-  "emails": [{"id", "subject", "sender", "body", "timestamp"}],
+  "items": [{"id", "type", "title", "description", "participants", "time_window", "urgency"}],
+  "context": "executive schedule summary string",
   "step": 0,
   "instructions": "string"
 }
@@ -53,24 +59,28 @@ The environment presents an inbox of 5 emails. The agent must process each email
 
 ## Reward Function
 
-- Per-step reward after each email action (0.0–1.0)
-- Label accuracy: exact match scoring
-- Priority accuracy: `1 - |predicted - expected|`
-- Reply quality: keyword coverage scoring
-- Unanswered emails penalize final score
+- Per-step reward after each conflict resolution (0.0–1.0)
+- Type accuracy: exact match (0.99 correct / 0.01 wrong)
+- Resolution accuracy: exact + acceptable alternatives get full credit
+- Message quality: keyword coverage scoring against expected resolution keywords
+- Unanswered items penalize final score
+
+## Dynamic Inbox Generation
+
+Each `reset()` call samples 5 conflict templates from a pool of 8, fills in randomized names, companies, times, and amounts. No two episodes are identical.
 
 ## Setup
 
 ```bash
 pip install -r requirements.txt
-python server.py          # starts env server on :7860
+python server.py
 ```
 
 ## Docker
 
 ```bash
-docker build -t email-triage-env .
-docker run -p 7860:7860 email-triage-env
+docker build -t conflict-resolution-env .
+docker run -p 7860:7860 conflict-resolution-env
 ```
 
 ## Inference
@@ -81,11 +91,18 @@ export ENV_URL=http://localhost:7860
 python inference.py
 ```
 
-## Baseline Scores (Llama-3.1-8B-Instruct)
+## Training (Round 2 — Onsite)
 
-| Task | Score |
-|------|-------|
-| easy | ~0.85 |
-| medium | ~0.72 |
-| hard | ~0.58 |
-| **average** | **~0.72** |
+Training notebook: `training/train_trl.ipynb` *(to be completed onsite with HF compute credits)*
+
+Expected reward improvement after fine-tuning:
+
+| Task | Before | After (expected) |
+|------|--------|-----------------|
+| easy | ~0.80 | ~0.95 |
+| medium | ~0.65 | ~0.85 |
+| hard | ~0.45 | ~0.70 |
+
+## Blog / Video
+
+*Link to be added after onsite training run.*

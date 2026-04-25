@@ -16,16 +16,29 @@ client = OpenAI(base_url=API_BASE_URL, api_key=HF_TOKEN)
 
 TASKS = ["easy", "medium", "hard"]
 
-SYSTEM_PROMPT = """You are an expert email triage assistant. You will be given emails and must process them.
+SYSTEM_PROMPT = """You are an expert executive assistant resolving workplace conflicts and scheduling issues.
 
-For each email, respond with a JSON object (and nothing else) with these fields:
-- email_id: the id of the email
-- label: one of "spam", "urgent", "normal", "newsletter"
-- priority: a float 0.0 (low) to 1.0 (high) — required for medium/hard tasks
-- reply: a short reply string — required for hard task only, empty string if no reply needed
+For each conflict item, respond with a JSON object (nothing else) with these fields:
+- item_id: the id of the conflict item
+- conflict_type: one of "scheduling", "deadline", "delegation", "social"
+- resolution: one of "reschedule", "decline", "delegate", "accept", "escalate"  (required for medium/hard)
+- message: the actual message to send to resolve this conflict (required for hard task only)
+
+Conflict type guide:
+- scheduling: overlapping meetings or time blocks
+- deadline: time-sensitive deliverable or contract
+- delegation: task needs to be assigned or approved by someone
+- social: personal/team social obligation conflicting with work
+
+Resolution guide:
+- reschedule: move one of the conflicting items to a new time
+- decline: politely refuse one obligation
+- delegate: assign the task/meeting to someone else
+- accept: confirm attendance or approval
+- escalate: flag to a higher authority immediately
 
 Example response:
-{"email_id": "e1", "label": "spam", "priority": 0.0, "reply": ""}
+{"item_id": "c1", "conflict_type": "scheduling", "resolution": "reschedule", "message": "Hi team, I have a conflict at that time. Can we reschedule to 4 PM?"}
 """
 
 
@@ -34,13 +47,12 @@ def call_llm(messages: list) -> str:
         model=MODEL_NAME,
         messages=messages,
         temperature=0.1,
-        max_tokens=300,
+        max_tokens=400,
     )
     return response.choices[0].message.content.strip()
 
 
 def parse_action(raw: str, task_id: str) -> dict:
-    # Extract JSON from response
     raw = raw.strip()
     start = raw.find("{")
     end = raw.rfind("}") + 1
@@ -48,11 +60,14 @@ def parse_action(raw: str, task_id: str) -> dict:
         return None
     try:
         data = json.loads(raw[start:end])
-        action = {"email_id": data.get("email_id", ""), "label": data.get("label")}
+        action = {
+            "item_id": data.get("item_id", ""),
+            "conflict_type": data.get("conflict_type"),
+        }
         if task_id in ("medium", "hard"):
-            action["priority"] = float(data.get("priority", 0.5))
+            action["resolution"] = data.get("resolution")
         if task_id == "hard":
-            action["reply"] = data.get("reply", "")
+            action["message"] = data.get("message", "")
         return action
     except Exception:
         return None
@@ -61,23 +76,31 @@ def parse_action(raw: str, task_id: str) -> dict:
 def run_task(task_id: str):
     session_id = str(uuid.uuid4())
 
-    # Reset
     resp = requests.post(f"{ENV_URL}/reset", json={"session_id": session_id, "task_id": task_id})
     resp.raise_for_status()
     obs = resp.json()
 
-    print(f"[START] task={task_id} env=email-triage model={MODEL_NAME}")
+    print(f"[START] task={task_id} env=executive-conflict-resolution model={MODEL_NAME}")
 
     step_num = 0
     all_rewards = []
     last_error = None
     done = False
 
-    while not done and obs.get("emails"):
-        email = obs["emails"][0]
+    while not done and obs.get("items"):
+        item = obs["items"][0]
         instructions = obs["instructions"]
+        context = obs.get("context", "")
 
-        user_msg = f"{instructions}\n\nProcess this email:\nID: {email['id']}\nFrom: {email['sender']}\nSubject: {email['subject']}\nBody: {email['body']}"
+        user_msg = (
+            f"{context}\n\n{instructions}\n\n"
+            f"Resolve this conflict:\n"
+            f"ID: {item['id']}\n"
+            f"Title: {item['title']}\n"
+            f"Description: {item['description']}\n"
+            f"Participants: {', '.join(item['participants'])}\n"
+            f"Urgency: {item['urgency']}"
+        )
 
         messages = [
             {"role": "system", "content": SYSTEM_PROMPT},
@@ -88,12 +111,12 @@ def run_task(task_id: str):
             raw = call_llm(messages)
             action = parse_action(raw, task_id)
             if action is None:
-                action = {"email_id": email["id"], "label": "normal", "priority": 0.5, "reply": ""}
+                action = {"item_id": item["id"], "conflict_type": "scheduling", "resolution": "reschedule", "message": ""}
                 last_error = "parse_failed"
             else:
                 last_error = None
         except Exception as e:
-            action = {"email_id": email["id"], "label": "normal", "priority": 0.5, "reply": ""}
+            action = {"item_id": item["id"], "conflict_type": "scheduling", "resolution": "reschedule", "message": ""}
             last_error = str(e)
 
         step_resp = requests.post(f"{ENV_URL}/step", json={"session_id": session_id, "action": action})
@@ -106,11 +129,10 @@ def run_task(task_id: str):
         step_num += 1
         all_rewards.append(reward_val)
 
-        action_str = f"label={action.get('label')},priority={action.get('priority', 'N/A')}"
+        action_str = f"type={action.get('conflict_type')},resolution={action.get('resolution', 'N/A')}"
         error_str = last_error if last_error else "null"
         print(f"[STEP] step={step_num} action={action_str} reward={reward_val:.2f} done={str(done).lower()} error={error_str}")
 
-    # Final score
     score_resp = requests.get(f"{ENV_URL}/score/{session_id}")
     final_score = score_resp.json().get("final_score", 0.0) if score_resp.ok else 0.0
 

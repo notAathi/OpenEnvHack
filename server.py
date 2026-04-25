@@ -2,14 +2,13 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import Dict, Optional
 import uvicorn
-import uuid
 
-from environment.env import EmailTriageEnv
+from environment.env import ConflictResolutionEnv
 from environment.models import Action, Observation
 
-app = FastAPI(title="Email Triage OpenEnv")
+app = FastAPI(title="Executive Conflict Resolution OpenEnv")
 
-_envs: Dict[str, EmailTriageEnv] = {}
+_envs: Dict[str, ConflictResolutionEnv] = {}
 DEFAULT_SESSION = "default"
 
 
@@ -25,7 +24,7 @@ class StepRequest(BaseModel):
 
 @app.get("/")
 def root():
-    return {"status": "ok", "env": "email-triage-openenv"}
+    return {"status": "ok", "env": "executive-conflict-resolution-openenv"}
 
 
 @app.get("/health")
@@ -38,7 +37,7 @@ def reset(req: ResetRequest = None):
     if req is None:
         req = ResetRequest()
     session_id = req.session_id or DEFAULT_SESSION
-    env = EmailTriageEnv()
+    env = ConflictResolutionEnv()
     _envs[session_id] = env
     return env.reset(task_level=req.task_id)
 

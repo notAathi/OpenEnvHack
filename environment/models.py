@@ -2,26 +2,29 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 
 
-class Email(BaseModel):
+class ConflictItem(BaseModel):
     id: str
-    subject: str
-    sender: str
-    body: str
-    timestamp: str
+    type: str          # "scheduling" | "deadline" | "delegation" | "social"
+    title: str
+    description: str
+    participants: List[str]
+    time_window: str
+    urgency: str       # "low" | "medium" | "high" | "critical"
 
 
 class Observation(BaseModel):
     task_id: str
-    emails: List[Email]
+    items: List[ConflictItem]
+    context: str       # executive's current schedule summary
     step: int
     instructions: str
 
 
 class Action(BaseModel):
-    email_id: str
-    label: Optional[str] = None       # spam | urgent | normal | newsletter
-    priority: Optional[float] = None  # 0.0 - 1.0
-    reply: Optional[str] = None       # hard task only
+    item_id: str
+    conflict_type: Optional[str] = None    # easy+
+    resolution: Optional[str] = None       # medium+: reschedule|decline|delegate|accept|escalate
+    message: Optional[str] = None          # hard: actual message to send
 
 
 class State(BaseModel):

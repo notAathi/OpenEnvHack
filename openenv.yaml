@@ -1,31 +1,34 @@
-name: email-triage-env
-version: "1.0.0"
+name: executive-conflict-resolution-env
+version: "2.0.0"
 description: >
-  A real-world email triage environment where an agent must classify, prioritize,
-  and respond to emails. Tasks span easy (classification), medium (prioritization),
-  and hard (full triage with response drafting).
+  An executive assistant environment where an agent must resolve real workplace conflicts:
+  scheduling clashes, deadline crises, delegation decisions, and social obligations.
+  Each episode generates a fresh dynamic inbox of 5 conflict items with randomized
+  participants, times, and stakes. Agents must identify conflict type, choose the right
+  resolution strategy, and draft the actual message to execute it.
 tags:
   - openenv
-  - email
-  - nlp
+  - conflict-resolution
+  - personalized-tasks
+  - long-horizon
   - real-world
 tasks:
   - id: easy
-    name: Email Classification
-    description: Classify each email into one of [spam, urgent, normal, newsletter]
+    name: Conflict Classification
+    description: Identify the type of each conflict (scheduling, deadline, delegation, social)
     difficulty: easy
   - id: medium
-    name: Email Prioritization
-    description: Sort a mixed inbox by urgency and assign priority scores
+    name: Conflict Resolution Strategy
+    description: Classify conflict AND choose the correct resolution action
     difficulty: medium
   - id: hard
-    name: Full Email Triage
-    description: Classify, prioritize, and draft a reply for each email
+    name: Full Conflict Resolution
+    description: Classify, choose resolution, AND draft the message to execute it
     difficulty: hard
 observation_space:
   type: object
-  description: Current email(s) in inbox with metadata
+  description: Dynamic conflict items with title, description, participants, urgency, and executive context
 action_space:
   type: object
-  description: Classification label, priority score, and optional reply draft
+  description: Conflict type classification, resolution strategy, and optional message draft
 reward_range: [0.0, 1.0]
