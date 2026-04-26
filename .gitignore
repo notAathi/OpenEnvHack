@@ -5,5 +5,7 @@ __pycache__/
 run_test.py
 test_env.py
 server_log.txt
+training_summary.png
+reward_curve.png
 *.egg-info/
 .venv/
