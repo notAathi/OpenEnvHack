@@ -13,9 +13,11 @@ your 10:30 board meeting just got moved and now it's sitting on top of the clien
 
 none of these have a clean answer. you can't just slap a label on them. you have to actually figure out what's going on, decide what to do, and then say something useful to real people.
 that's what I built.
+
 ---
 
 ## how it works
+
 every time you hit reset, the model gets a fresh inbox. 5 conflict situations. different people, different companies, different stakes, different urgency. fully randomized every run so no two episodes are the same.
 
 for each conflict the model has to answer three things:
@@ -40,6 +42,7 @@ we split this into three levels — easy just asks for the conflict type, medium
 ---
 
 ## scoring
+
 conflict type — exact match. right is 0.99, wrong is 0.01. pretty unforgiving.
 
 resolution — a bit more flexible. some situations genuinely have more than one valid answer. escalating when the expected answer is delegating still gets full credit because honestly both make sense in context.
@@ -48,47 +51,55 @@ message — we check for the signals you'd expect. reschedule message should men
 leave something unresolved — you get penalized.
 
 ---
+
 ## training
 
 I trained qwen2.5-1.5b-instruct using grpo via trl, lora adapters on a 4-bit base. nothing fancy.
-the reward wasn't simulated though every output got sent to the actual live environment, scored in real time, and fed back into training. I wanted the model learning against real environment behavior not a proxy THAT WAY i feel ITS ACTUALLY representing the real life dynamics and not just some hackathon thing.
+the reward wasn't simulated though — every output got sent to the actual live environment, scored in real time, and fed back into training. I wanted the model learning against real environment behavior not a proxy. that way I feel it's actually representing the real life dynamics and not just some hackathon thing.
 
 100 prompts, 2 epochs, 100 steps. reward averaged over 3 env calls per completion to smooth out noise.
 
 baseline scores before any training:
 
-| task -> score |
------------------
-| easy -> 0.99 |
-| medium -> 0.81 |
-| hard -> 0.39 |
+| task | score |
+|------|-------|
+| easy | 0.99 |
+| medium | 0.81 |
+| hard | 0.39 |
 
 easy is basically solved out of the box. medium is decent. hard is where reality hits — 0.39 means the model sometimes gets it right but not consistently.
 
-![Training Results](training_summary.png)
+![Training Results](https://raw.githubusercontent.com/notAathi/OpenEnvHack/main/training_summary.png)
 
 ---
 
 ## what actually made this hard
+
 honestly the hardest part wasn't the model. it was the environment itself.
 because the reward comes from a live api, every training step is slightly different. different inbox, slight scoring variation, network latency. the same response can get different rewards across calls just because the conflict items are randomized each time.
 
 that noise adds up fast. in under 200 steps the model doesn't get enough clean signal to settle into a stable policy. it starts chasing noise instead of learning the actual task.
 
 the environment works. the reward function is meaningful. what's missing is more compute, longer runs, and better noise handling. all solvable — just not in one session but doable with more time.
+
 ---
 
 ## try it
+
 environment is live. hit reset and you get a different messy inbox every time.
 
 live env → https://huggingface.co/spaces/notAathi/OpenEvnHack
+
 github → https://github.com/notAathi/OpenEnvHack
+
 training notebook → https://www.kaggle.com/code/notaathi/openenvaathi
+
 trained model → https://huggingface.co/notAathi/conflict-resolution-grpo
+
 ---
 
 we didn't want to build another benchmark. we wanted to build something that feels like actual work — the messy overlapping time-sensitive stuff real assistants deal with every day.
 
-if llms are going to be genuinely useful they shouldn't just sort emails. they should be able to walk into chaos and figure out what to do next. And this is one practical use case i really thought would be one day implemented into system. Other ideas I had in my mind about multi agent stuffs, they were too fancy than what they could do practically. Hope this explains you all. Tc! 
+if llms are going to be genuinely useful they shouldn't just sort emails. they should be able to walk into chaos and figure out what to do next. and this is one practical use case I really thought would be one day implemented into real systems. other ideas I had in mind about multi agent stuff — they were too fancy for what they could do practically. hope this explains it all. tc!
 
 *— Aathi Madhav*
