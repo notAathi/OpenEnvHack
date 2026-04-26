@@ -19,6 +19,16 @@ A dynamic real-world environment where an LLM agent acts as an executive assista
 
 **Theme: 3.2 Personalized Tasks** (also touches Theme 2: Long-Horizon Planning)
 
+## Links
+
+| Resource | URL |
+|----------|-----|
+| 🤗 HF Space (live env) | https://huggingface.co/spaces/notAathi/OpenEvnHack |
+| 💻 GitHub | https://github.com/notAathi/OpenEnvHack |
+| 📓 Training Notebook | https://www.kaggle.com/code/notaathi/openenvaathi |
+| 🧠 Trained Model | https://huggingface.co/notAathi/conflict-resolution-grpo |
+| 📝 Blog Post | [Blog.md](./Blog.md) |
+
 ## Why This Is Hard
 
 Unlike static email classification, every episode generates a **fresh inbox** with randomized participants, times, and stakes. The agent must:
@@ -69,6 +79,17 @@ Unlike static email classification, every episode generates a **fresh inbox** wi
 
 Each `reset()` call samples 5 conflict templates from a pool of 8, fills in randomized names, companies, times, and amounts. No two episodes are identical.
 
+## Results
+
+| Task | Baseline Score |
+|------|---------------|
+| easy | ~0.99 |
+| medium | ~0.81 |
+| hard | ~0.39 |
+
+Training: GRPO via TRL on `Qwen2.5-1.5B-Instruct` with LoRA adapters (4-bit quantized).
+Training showed policy instability on short runs — traced to noisy reward signals from live HTTP environment calls. Longer training runs with larger batch sizes expected to show improvement.
+
 ## Setup
 
 ```bash
@@ -91,18 +112,9 @@ export ENV_URL=http://localhost:7860
 python inference.py
 ```
 
-## Training (Round 2 — Onsite)
+## API
 
-Training notebook: `training/train_trl.ipynb` *(to be completed onsite with HF compute credits)*
-
-Expected reward improvement after fine-tuning:
-
-| Task | Before | After (expected) |
-|------|--------|-----------------|
-| easy | ~0.80 | ~0.95 |
-| medium | ~0.65 | ~0.85 |
-| hard | ~0.45 | ~0.70 |
-
-## Blog / Video
-
-*Link to be added after onsite training run.*
+- `POST /reset` — start new episode, returns conflict inbox
+- `POST /step` — submit action, returns reward
+- `GET /score/{session_id}` — get final episode score
+- `GET /docs` — interactive Swagger API docs
