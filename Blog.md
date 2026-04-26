@@ -79,7 +79,7 @@ baseline scores before any training:
 
 easy is basically solved out of the box. medium is decent. hard is where reality hits — 0.39 means the model sometimes gets it right but not consistently.
 
-![Training Results](training_summary.png)
+![Training Results](https://raw.githubusercontent.com/notAathi/OpenEnvHack/main/training_summary.png)
 
 ---
 
